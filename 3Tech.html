@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStock App - B2B Importaciones</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slateTheme: {
+                            50: '#F4F6F8',
+                            800: '#2C3E50',
+                            900: '#1E2B37',
+                            950: '#141D26'
+                        },
+                        terracotta: {
+                            500: '#C06346',
+                            600: '#A65233', // Color marrón/terracota de la imagen de referencia
+                            700: '#8A4126'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .watercolor-bg {
+            background: linear-gradient(135deg, #FAF6F0 0%, #EFE4D6 50%, #D8C3B0 100%);
+        }
+    </style>
+</head>
+<body class="bg-slateTheme-950 text-slate-100 flex justify-center items-center min-h-screen p-0 sm:p-4 select-none">
+
+    <!-- Mockup Smartphone -->
+    <div class="relative w-full sm:w-[410px] h-[100vh] sm:h-[840px] bg-slateTheme-900 sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] border-slateTheme-800 flex flex-col overflow-hidden">
+        
+        <!-- Status Bar -->
+        <div class="bg-slateTheme-900 text-slate-300 text-xs px-6 pt-3 pb-2 flex justify-between items-center select-none z-50 border-b border-slateTheme-800">
+            <span class="font-semibold" id="current-time">09:41</span>
+            <div class="w-16 h-4 bg-slateTheme-950 rounded-full flex items-center justify-center">
+                <div class="w-3 h-3 bg-slateTheme-800 rounded-full"></div>
+            </div>
+            <div class="flex items-center space-x-1.5">
+                <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+                <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                <i data-lucide="battery" class="w-3.5 h-3.5 text-terracotta-600"></i>
+            </div>
+        </div>
+
+        <!-- Header Dynamic -->
+        <header id="app-header" class="bg-slateTheme-900 border-b border-slateTheme-800 px-4 py-3 flex justify-between items-center z-40">
+            <div class="flex items-center space-x-2">
+                <button id="back-btn" onclick="goBack()" class="hidden text-slate-300 hover:text-white mr-1">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                <div class="bg-terracotta-600 text-white p-1.5 rounded-lg font-bold cursor-pointer" onclick="navigateTo('home')">
+                    <i data-lucide="package" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base text-white leading-none">TechStock</h1>
+                    <span id="user-role-badge" class="text-[10px] text-slate-400">Comprador Verificado</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleNotifications()" class="relative p-2 text-slate-300 hover:text-white rounded-lg bg-slateTheme-800">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-terracotta-600 rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toast Notifications -->
+        <div id="toast" class="hidden absolute top-16 left-4 right-4 bg-terracotta-600 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span id="toast-msg">Notificación</span>
+            </div>
+            <button onclick="hideToast()"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+        </div>
+
+        <!-- Panel de Alertas -->
+        <div id="notifications-panel" class="hidden absolute top-16 left-0 right-0 bottom-0 bg-slateTheme-950/95 z-50 p-4 space-y-3 backdrop-blur-md">
+            <div class="flex justify-between items-center border-b border-slateTheme-800 pb-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i data-lucide="bell" class="w-4 h-4 text-terracotta-600"></i> Avisos Recientes
+                </h3>
+                <button onclick="toggleNotifications()" class="text-xs text-slate-400">Cerrar</button>
+            </div>
+            <div class="space-y-2 text-xs">
+                <div class="p-3 bg-slateTheme-900 rounded-xl border border-slateTheme-800 flex items-start gap-3">
+                    <i data-lucide="file-text" class="w-4 h-4 text-emerald-400 mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold text-white">Nueva oferta flash disponible</p>
+                        <p class="text-[10px] text-slate-400">Asia Tech respondió a tu cotización masiva en < 5 min.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTAINER -->
+        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-slateTheme-900" id="main-container">
+
+            <!-- 1. LOGIN / ONBOARDING -->
+            <section id="screen-login" class="screen watercolor-bg p-6 flex flex-col justify-between h-full text-slate-800">
+                <div class="pt-8 text-center space-y-3">
+                    <h1 class="text-4xl font-extrabold text-terracotta-700 tracking-tight">TechStock</h1>
+                    <p class="text-xs font-semibold text-slate-700">Abastece tu negocio en minutos y con cero riesgo</p>
+                    
+                    <form onsubmit="handleLogin(event)" class="space-y-3 text-left pt-6">
+                        <div>
+                            <input type="text" placeholder="Usuario / RUC" value="20601234567" required class="w-full bg-white/80 border border-slate-300 rounded-xl px-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-terracotta-600">
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Contraseña" value="••••••••" required class="w-full bg-white/80 border border-slate-300 rounded-xl px-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-terracotta-600">
+                        </div>
+                        <div class="text-right">
+                            <a href="#" class="text-[11px] text-slate-600 hover:underline">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        <button type="submit" class="w-full bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition">
+                            Iniciar Sesión
+                        </button>
+                    </form>
+                </div>
+
+                <div class="space-y-2 pt-4 border-t border-slate-300/60 text-center">
+                    <p class="text-xs text-slate-600">¿Nuevo en TechStock?</p>
+                    <button onclick="handleLogin(event)" class="w-full bg-slateTheme-800 hover:bg-slateTheme-900 text-white font-bold py-3 rounded-xl text-xs transition">
+                        Contactar a Ventas
+                    </button>
+                </div>
+            </section>
+
+            <!-- 2. HOME DASHBOARD -->
+            <section id="screen-home" class="screen hidden p-4 space-y-4">
+                <div class="flex justify-between items-center text-xs">
+                    <div>
+                        <span class="text-slate-400">Bienvenido de nuevo</span>
+                        <h2 class="text-base font-bold text-white">Juan <span class="text-xs font-normal text-terracotta-500">(Revendedor)</span></h2>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="home-search" oninput="filterHomeProducts()" placeholder="Buscar modelo específico, repuesto o manual..." class="w-full bg-white text-slate-900 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none">
+                </div>
+
+                <!-- Banner de Solución Lean Canvas -->
+                <div class="bg-gradient-to-r from-terracotta-700 to-terracotta-600 p-3 rounded-2xl text-white space-y-1 shadow-md">
+                    <div class="flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span class="text-xs font-bold">Importadores Directos Verificados</span>
+                    </div>
+                    <p class="text-[10px] text-slate-100 opacity-90">Verificación presencial de bodegas. Cotizaciones masivas en tiempo real y stock 100% disponible.</p>
+                </div>
+
+                <!-- Categorías -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-300 mb-2">Categorías Principales</h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="filterCategory('cargadores')" class="bg-white text-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-200 shadow-sm">
+                            <i data-lucide="zap" class="w-5 h-5 text-terracotta-600 mb-1"></i>
+                            <span class="text-[10px] font-semibold">Cargadores</span>
+                        </button>
+                        <button onclick="filterCategory('audio')" class="bg-white text-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-200 shadow-sm">
+                            <i data-lucide="headphones" class="w-5 h-5 text-terracotta-600 mb-1"></i>
+                            <span class="text-[10px] font-semibold">Audio</span>
+                        </button>
+                        <button onclick="filterCategory('fundas')" class="bg-white text-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-200 shadow-sm">
+                            <i data-lucide="smartphone" class="w-5 h-5 text-terracotta-600 mb-1"></i>
+                            <span class="text-[10px] font-semibold">Fundas</span>
+                        </button>
+                        <button onclick="filterCategory('cables')" class="bg-white text-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-200 shadow-sm">
+                            <i data-lucide="cable" class="w-5 h-5 text-terracotta-600 mb-1"></i>
+                            <span class="text-[10px] font-semibold">Cables</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Secciones Monetización / Lean Canvas -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div onclick="navigateTo('catalog')" class="bg-slateTheme-800 p-2.5 rounded-xl border border-slateTheme-800 cursor-pointer hover:border-terracotta-600 transition flex items-center gap-2">
+                        <i data-lucide="flame" class="w-5 h-5 text-amber-500"></i>
+                        <div>
+                            <p class="text-[11px] font-bold text-white">Ofertas Liquidación</p>
+                            <p class="text-[9px] text-slate-400">Lotes de remate</p>
+                        </div>
+                    </div>
+                    <div onclick="navigateTo('directory')" class="bg-slateTheme-800 p-2.5 rounded-xl border border-slateTheme-800 cursor-pointer hover:border-terracotta-600 transition flex items-center gap-2">
+                        <i data-lucide="award" class="w-5 h-5 text-terracotta-500"></i>
+                        <div>
+                            <p class="text-[11px] font-bold text-white">Proveedores Top</p>
+                            <p class="text-[9px] text-slate-400">Verificados in situ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Importadores Verificados -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold text-slate-300">Importadores Destacados</h3>
+                        <button onclick="navigateTo('directory')" class="text-[11px] text-terracotta-500 font-semibold hover:underline">Ver todos</button>
+                    </div>
+                    <div id="top-importers-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Solicitudes / Resumen de Cotizaciones -->
+                <div class="bg-slateTheme-800 p-3 rounded-2xl border border-slateTheme-800 space-y-2">
+                    <h3 class="text-xs font-bold text-white">Cotización Masiva / Flash</h3>
+                    <div onclick="navigateTo('quotes')" class="bg-slateTheme-900 p-2.5 rounded-xl flex justify-between items-center cursor-pointer hover:border hover:border-terracotta-600 transition">
+                        <div>
+                            <p class="text-xs font-bold text-white">Respuestas en Tiempo Real (3)</p>
+                            <p class="text-[10px] text-slate-400">Emparejado por M.O.Q. y Stock disponible</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-terracotta-500"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. DIRECTORIO DE IMPORTADORES -->
+            <section id="screen-directory" class="screen hidden p-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Directorio de Importadores</h2>
+                        <p class="text-[10px] text-slate-400">Verificados presencialmente en almacén</p>
+                    </div>
+                    <span class="text-xs text-slate-400"><span id="imp-count">3</span> Activos</span>
+                </div>
+                <div id="full-directory-list" class="space-y-3"></div>
+            </section>
+
+            <!-- 4. SOLICITAR COTIZACIÓN (RFQ) -->
+            <section id="screen-rfq" class="screen hidden p-4 space-y-4">
+                <div>
+                    <h2 class="text-base font-bold text-white">Cotización Masiva / Flash</h2>
+                    <p class="text-xs text-slate-400">Ahorra tiempo: elimina la cotización uno a uno.</p>
+                </div>
+
+                <form onsubmit="submitRFQ(event)" class="space-y-3 bg-white text-slate-900 p-4 rounded-2xl shadow-md">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Producto o Modelo Específico</label>
+                        <select id="rfq-product" class="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-terracotta-600">
+                            <option value="Cable USB-C de Carga Rápida">Cable USB-C de Carga Rápida</option>
+                            <option value="Cargador de Pared 20W Type-C">Cargador de Pared 20W Type-C</option>
+                            <option value="Audífonos Bluetooth Inalámbricos">Audífonos Bluetooth Inalámbricos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                            <span>Cantidad solicitada</span>
+                            <span id="qty-val" class="text-terracotta-600">500 Unidades</span>
+                        </div>
+                        <input type="range" id="qty-range" min="50" max="5000" step="50" value="500" oninput="updateQty(this.value)" class="w-full accent-terracotta-600">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-bold text-slate-700 mb-1">
+                            <span>Mínimo de Pedido Tolerado (M.O.Q.)</span>
+                            <span id="moq-val" class="text-terracotta-600">100 Unidades</span>
+                        </div>
+                        <input type="range" id="moq-range" min="20" max="1000" step="10" value="100" oninput="updateMOQ(this.value)" class="w-full accent-terracotta-600">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Notas o Requerimientos Especiales</label>
+                        <textarea id="rfq-notes" placeholder="Ejemplo: Requiero empaque individual, manual técnico en español y factura..." class="w-full bg-slate-100 border border-slate-300 rounded-xl p-2.5 text-xs text-slate-900 h-20 focus:outline-none focus:border-terracotta-600"></textarea>
+                    </div>
+
+                    <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-[11px] text-amber-800 flex items-center space-x-2">
+                        <i data-lucide="zap" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                        <span>Respuesta estimada por algoritmo: <strong>&lt; 5 minutos</strong></span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-terracotta-600 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-2 hover:bg-terracotta-700 transition shadow-md">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span>Enviar Cotización Flash Masiva</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- 5. COMPARADOR DE COTIZACIONES -->
+            <section id="screen-quotes" class="screen hidden p-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Cotizaciones Recibidas</h2>
+                        <p class="text-[11px] text-slate-400">Emparejamiento en tiempo real por M.O.Q.</p>
+                    </div>
+                    <button onclick="sortQuotes()" class="text-xs bg-slateTheme-800 text-slate-200 px-3 py-1.5 rounded-xl border border-slateTheme-800 flex items-center space-x-1">
+                        <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-terracotta-500"></i>
+                        <span id="sort-label">Por Precio Al Por Mayor</span>
+                    </button>
+                </div>
+
+                <div id="quotes-comparison-list" class="space-y-3"></div>
+            </section>
+
+            <!-- 6. CATÁLOGO DE PRODUCTOS -->
+            <section id="screen-catalog" class="screen hidden p-4 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-white">Catálogo e Inventario</h2>
+                    <select id="catalog-category-filter" onchange="filterCatalogCategory()" class="bg-slateTheme-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 border border-slateTheme-800">
+                        <option value="all">Todas las categorías</option>
+                        <option value="cargadores">Cargadores</option>
+                        <option value="cables">Cables</option>
+                        <option value="audio">Audio</option>
+                    </select>
+                </div>
+                <div id="catalog-products-grid" class="grid grid-cols-2 gap-3"></div>
+            </section>
+
+            <!-- 7. DETALLE DEL PRODUCTO -->
+            <section id="screen-product-detail" class="screen hidden p-4 space-y-4">
+                <div id="product-detail-content"></div>
+            </section>
+
+            <!-- 8. CHECKOUT / COMPRA -->
+            <section id="screen-checkout" class="screen hidden p-4 space-y-4">
+                <h2 class="text-base font-bold text-white">Confirmar Pedido Directo</h2>
+                <div class="bg-white text-slate-900 p-4 rounded-2xl shadow-md space-y-3 text-xs" id="checkout-summary">
+                    <!-- Resumen dinámico -->
+                </div>
+                
+                <div class="bg-slateTheme-800 p-4 rounded-2xl border border-slateTheme-800 space-y-2">
+                    <h3 class="text-xs font-bold text-white mb-2">Garantía y Protección al Comprador</h3>
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl bg-slateTheme-900 border border-terracotta-600 cursor-pointer">
+                        <input type="radio" name="payment" checked class="accent-terracotta-600">
+                        <div>
+                            <p class="font-bold text-white text-xs">Pago Seguro Escrow</p>
+                            <p class="text-[10px] text-slate-400">Mantenemos el dinero hasta la verificación física del stock recibido</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <button onclick="confirmOrder()" class="w-full bg-terracotta-600 text-white font-bold py-3.5 rounded-xl text-xs hover:bg-terracotta-700 transition shadow-md">
+                    Confirmar Transacción
+                </button>
+            </section>
+
+            <!-- 9. MIS PEDIDOS -->
+            <section id="screen-orders" class="screen hidden p-4 space-y-4">
+                <h2 class="text-base font-bold text-white">Mis Pedidos Realizados</h2>
+                <div id="orders-list" class="space-y-3"></div>
+            </section>
+
+            <!-- 10. CHAT -->
+            <section id="screen-chat" class="screen hidden flex flex-col h-full p-4">
+                <div class="flex items-center justify-between border-b border-slateTheme-800 pb-3 mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-terracotta-600 flex items-center justify-center font-bold text-xs text-white" id="chat-avatar">
+                            AT
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-white" id="chat-title">Asia Tech</h3>
+                            <span class="text-[9px] text-emerald-400 flex items-center gap-1">● Verificado Presencialmente</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto space-y-2 p-3 bg-slateTheme-950 rounded-xl border border-slateTheme-800 mb-3 text-xs" id="chat-messages">
+                    <div class="bg-slateTheme-800 p-2.5 rounded-xl max-w-[80%] text-slate-200">
+                        ¡Hola! Contamos con stock disponible inmediato para tu lote. ¿Deseas descargar el manual técnico PDF antes de cerrar el pedido?
+                    </div>
+                </div>
+
+                <form onsubmit="sendMessage(event)" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." class="flex-1 bg-white text-slate-900 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                    <button type="submit" class="bg-terracotta-600 text-white p-2.5 rounded-xl hover:bg-terracotta-700">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </section>
+
+        </main>
+
+        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <nav id="bottom-nav" class="bg-slateTheme-900 border-t border-slateTheme-800 px-2 py-2 grid grid-cols-5 gap-1 z-40">
+            <button onclick="navigateTo('home')" id="nav-home" class="nav-item text-terracotta-500 flex flex-col items-center justify-center py-1">
+                <i data-lucide="home" class="w-4 h-4"></i>
+                <span class="text-[9px] mt-0.5">Inicio</span>
+            </button>
+            <button onclick="navigateTo('directory')" id="nav-directory" class="nav-item text-slate-400 flex flex-col items-center justify-center py-1">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span class="text-[9px] mt-0.5">Directorio</span>
+            </button>
+            <button onclick="navigateTo('rfq')" id="nav-rfq" class="nav-item text-slate-400 flex flex-col items-center justify-center py-1">
+                <div class="bg-terracotta-600 text-white p-1.5 rounded-full -mt-4 shadow-lg">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                </div>
+                <span class="text-[9px] text-terracotta-500 font-semibold mt-0.5">Cotizar</span>
+            </button>
+            <button onclick="navigateTo('catalog')" id="nav-catalog" class="nav-item text-slate-400 flex flex-col items-center justify-center py-1">
+                <i data-lucide="grid" class="w-4 h-4"></i>
+                <span class="text-[9px] mt-0.5">Catálogo</span>
+            </button>
+            <button onclick="navigateTo('orders')" id="nav-orders" class="nav-item text-slate-400 flex flex-col items-center justify-center py-1">
+                <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+                <span class="text-[9px] mt-0.5">Pedidos</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        // DATOS DE PRUEBA
+        const importers = [
+            { id: 1, name: "Asia Tech Import S.A.C.", desc: "Accesorios y Carga Rápida (M.O.Q. Flexible)", rating: 4.9, moq: 50, verified: true },
+            { id: 2, name: "Global Electronics", desc: "Audio y Cables Trenzados Directos", rating: 4.7, moq: 20, verified: true },
+            { id: 3, name: "Importadora MegaStock", desc: "Fundas y Vidrios con Stock Garantizado", rating: 4.8, moq: 30, verified: true }
+        ];
+
+        const products = [
+            { id: 101, name: "Cable USB-C de Carga Rápida 1m", category: "cables", price: 1.20, moq: 100, stock: 4500, supplier: "Asia Tech Import S.A.C.", specs: "Nylon trenzado, Soporta hasta 60W, Conectores reforzados.", manual: "Manual_USB_C_TechStock.pdf" },
+            { id: 102, name: "Cargador de Pared 20W Type-C", category: "cargadores", price: 2.80, moq: 50, stock: 1200, supplier: "Asia Tech Import S.A.C.", specs: "Carga rápida PD 3.0, Protección contra sobrecalentamiento.", manual: "Manual_Cargador_20W.pdf" },
+            { id: 103, name: "Audífonos Bluetooth Inalámbricos TWS", category: "audio", price: 6.50, moq: 20, stock: 800, supplier: "Global Electronics", specs: "Batería de larga duración (24h), Estuche de carga compacto.", manual: "Manual_TWS_Bluetooth.pdf" },
+            { id: 104, name: "Funda Protectora Anti-Caídas", category: "fundas", price: 0.90, moq: 100, stock: 3000, supplier: "Importadora MegaStock", specs: "Bordes reforzados TPU transparente, Alta resistencia a golpes.", manual: "Ficha_Tecnica_Fundas.pdf" }
+        ];
+
+        let quotes = [
+            { id: 1, product: "Cable USB-C de Carga Rápida 1m", supplier: "Asia Tech Import S.A.C.", price: 1.20, stock: "Stock 100% Disponible", qty: 500 },
+            { id: 2, product: "Cable USB-C de Carga Rápida 1m", supplier: "Global Electronics", price: 1.35, stock: "Stock 100% Disponible", qty: 500 },
+            { id: 3, product: "Cable USB-C de Carga Rápida 1m", supplier: "Importadora MegaStock", price: 1.40, stock: "Poco Stock", qty: 500 }
+        ];
+
+        let orders = [
+            { id: "ORD-9421", supplier: "Asia Tech Import S.A.C.", status: "En Camino", progress: "70%", items: "500x Cable USB-C 1m", total: 600.00 }
+        ];
+
+        let activeOrder = null;
+        let historyStack = ['login'];
+
+        window.onload = () => {
+            lucide.createIcons();
+            renderImporters();
+            renderCatalog(products);
+            renderQuotes();
+            renderOrders();
+        };
+
+        // CONTROL DE NAVEGACIÓN
+        function navigateTo(screenId, pushToHistory = true) {
+            if (pushToHistory && historyStack[historyStack.length - 1] !== screenId) {
+                historyStack.push(screenId);
+            }
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            const targetScreen = document.getElementById(`screen-${screenId}`);
+            if (targetScreen) targetScreen.classList.remove('hidden');
+
+            // Actualizar Nav Activo
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('text-terracotta-500');
+                btn.classList.add('text-slate-400');
+            });
+            const activeNav = document.getElementById(`nav-${screenId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-400');
+                activeNav.classList.add('text-terracotta-500');
+            }
+
+            // Mostrar/Ocultar Botón Atrás
+            const backBtn = document.getElementById('back-btn');
+            if (screenId !== 'home' && screenId !== 'login') {
+                backBtn.classList.remove('hidden');
+            } else {
+                backBtn.classList.add('hidden');
+            }
+
+            // Ocultar Bottom Nav en Login
+            const bottomNav = document.getElementById('bottom-nav');
+            if (screenId === 'login') {
+                bottomNav.classList.add('hidden');
+            } else {
+                bottomNav.classList.remove('hidden');
+            }
+        }
+
+        function goBack() {
+            if (historyStack.length > 1) {
+                historyStack.pop();
+                const previous = historyStack[historyStack.length - 1];
+                navigateTo(previous, false);
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            showNotificationToast("¡Bienvenido a TechStock!");
+            navigateTo('home');
+        }
+
+        // RENDERS DE SECCIONES
+        function renderImporters() {
+            const listHtml = importers.map(imp => `
+                <div class="bg-white text-slate-900 p-3.5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center text-xs">
+                    <div>
+                        <div class="flex items-center gap-1">
+                            <span class="font-bold text-slate-900">${imp.name}</span>
+                            ${imp.verified ? '<span class="flex items-center gap-0.5 text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold"><i data-lucide="check-circle" class="w-3 h-3 text-emerald-600"></i> Verificado Presencial</span>' : ''}
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-0.5">${imp.desc}</p>
+                        <span class="text-[10px] text-amber-600 font-bold">★ ${imp.rating} | M.O.Q. Mínimo: ${imp.moq} u</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <button onclick="openChat('${imp.name}')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-2.5 py-1 rounded-lg text-[11px] transition">Perfil</button>
+                        <button onclick="navigateTo('rfq')" class="bg-terracotta-600 hover:bg-terracotta-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition">Cotizar</button>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('top-importers-list').innerHTML = listHtml;
+            document.getElementById('full-directory-list').innerHTML = listHtml;
+            document.getElementById('imp-count').innerText = importers.length;
+            lucide.createIcons();
+        }
+
+        function renderCatalog(items) {
+            const container = document.getElementById('catalog-products-grid');
+            container.innerHTML = items.map(prod => `
+                <div onclick="showProductDetail(${prod.id})" class="bg-white text-slate-900 p-3 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-terracotta-600 transition flex flex-col justify-between">
+                    <div>
+                        <div class="bg-slate-100 h-24 rounded-xl flex items-center justify-center mb-2">
+                            <i data-lucide="package" class="w-10 h-10 text-slate-400"></i>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-900 leading-snug line-clamp-2">${prod.name}</h4>
+                        <p class="text-[10px] text-slate-500 mt-1">${prod.supplier}</p>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs font-bold text-terracotta-600">$${prod.price.toFixed(2)}/u</span>
+                        <span class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-semibold">M.O.Q.: ${prod.moq}</span>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function showProductDetail(prodId) {
+            const prod = products.find(p => p.id === prodId);
+            if (!prod) return;
+
+            const container = document.getElementById('product-detail-content');
+            container.innerHTML = `
+                <div class="bg-white text-slate-900 p-4 rounded-2xl shadow-md space-y-3">
+                    <div class="bg-slate-100 h-40 rounded-xl flex items-center justify-center">
+                        <i data-lucide="package" class="w-16 h-16 text-slate-400"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] bg-terracotta-500/10 text-terracotta-600 px-2 py-0.5 rounded-full font-bold uppercase">${prod.category}</span>
+                        <h2 class="text-base font-bold text-slate-900 mt-1">${prod.name}</h2>
+                        <p class="text-xs text-slate-500">Importador Directo: ${prod.supplier}</p>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div>
+                            <span class="text-[10px] text-slate-500">Precio por Mayor</span>
+                            <p class="text-base font-bold text-terracotta-600">$${prod.price.toFixed(2)}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-500">Stock Garantizado</span>
+                            <p class="text-xs font-bold text-emerald-600">${prod.stock} Unidades</p>
+                        </div>
+                    </div>
+
+                    <!-- Solución Lean Canvas: Manuales completos en línea -->
+                    <div class="border-t border-b border-slate-100 py-2.5">
+                        <h4 class="text-xs font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <i data-lucide="book-open" class="w-4 h-4 text-terracotta-600"></i> Manual del Modelo
+                        </h4>
+                        <p class="text-[11px] text-slate-500 mb-2">Consulta o descarga las especificaciones de fabricación.</p>
+                        <button onclick="downloadManual('${prod.manual}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold py-2 rounded-xl flex items-center justify-center gap-2 transition border border-slate-200">
+                            <i data-lucide="download" class="w-3.5 h-3.5 text-terracotta-600"></i>
+                            <span>Descargar Manual PDF (${prod.manual})</span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800 mb-1">Especificaciones Técnicas</h4>
+                        <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">${prod.specs}</p>
+                    </div>
+
+                    <button onclick="startCheckout('${prod.name}', '${prod.supplier}', ${prod.price}, ${prod.moq})" class="w-full bg-terracotta-600 text-white font-bold py-3 rounded-xl text-xs hover:bg-terracotta-700 transition shadow-md">
+                        Comprar Lote (Mínimo ${prod.moq} Unidades)
+                    </button>
+                </div>
+            `;
+            navigateTo('product-detail');
+            lucide.createIcons();
+        }
+
+        function downloadManual(manualName) {
+            showNotificationToast(`Descargando manual: ${manualName}`);
+        }
+
+        function filterHomeProducts() {
+            const query = document.getElementById('home-search').value.toLowerCase();
+            const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            renderCatalog(filtered);
+            if (query.trim() !== '') {
+                navigateTo('catalog');
+            }
+        }
+
+        function filterCategory(cat) {
+            document.getElementById('catalog-category-filter').value = cat;
+            renderCatalog(products.filter(p => p.category === cat));
+            navigateTo('catalog');
+        }
+
+        function filterCatalogCategory() {
+            const cat = document.getElementById('catalog-category-filter').value;
+            if (cat === 'all') {
+                renderCatalog(products);
+            } else {
+                renderCatalog(products.filter(p => p.category === cat));
+            }
+        }
+
+        // ACCIONES DE COTIZACIÓN (RFQ)
+        function updateQty(val) {
+            document.getElementById('qty-val').innerText = `${val} Unidades`;
+        }
+
+        function updateMOQ(val) {
+            document.getElementById('moq-val').innerText = `${val} Unidades`;
+        }
+
+        function submitRFQ(e) {
+            e.preventDefault();
+            const prodName = document.getElementById('rfq-product').value;
+            const qty = document.getElementById('qty-range').value;
+
+            quotes.unshift({
+                id: Date.now(),
+                product: prodName,
+                supplier: "Asia Tech Import S.A.C.",
+                price: 1.15,
+                stock: "Stock 100% Disponible",
+                qty: qty
+            });
+
+            renderQuotes();
+            showNotificationToast("Cotización Flash enviada a importadores.");
+            navigateTo('quotes');
+        }
+
+        function renderQuotes() {
+            const container = document.getElementById('quotes-comparison-list');
+            container.innerHTML = quotes.map(q => `
+                <div class="bg-white text-slate-900 p-3.5 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] text-terracotta-600 font-bold uppercase">${q.product}</span>
+                            <h4 class="text-xs font-bold text-slate-900">${q.supplier}</h4>
+                        </div>
+                        <span class="text-base font-bold text-terracotta-600">$${parseFloat(q.price).toFixed(2)}/u</span>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-500 border-t border-slate-100 pt-1.5">
+                        <span>Lote Solicitado: ${q.qty || 500} u</span>
+                        <span class="text-emerald-600 font-bold">${q.stock}</span>
+                    </div>
+                    <button onclick="startCheckout('${q.product}', '${q.supplier}', ${q.price}, ${q.qty || 500})" class="w-full bg-terracotta-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-terracotta-700 transition shadow-sm">
+                        Aceptar Oferta y Emitir Orden
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        let isSortedAsc = true;
+        function sortQuotes() {
+            isSortedAsc = !isSortedAsc;
+            quotes.sort((a, b) => isSortedAsc ? a.price - b.price : b.price - a.price);
+            document.getElementById('sort-label').innerText = isSortedAsc ? "Menor Precio" : "Mayor Precio";
+            renderQuotes();
+        }
+
+        // CHECKOUT & PEDIDOS
+        function startCheckout(product, supplier, price, qty) {
+            const total = price * qty;
+            activeOrder = { product, supplier, price, qty, total };
+
+            document.getElementById('checkout-summary').innerHTML = `
+                <div class="border-b border-slate-100 pb-2">
+                    <span class="text-[10px] text-slate-500">Producto / Modelo</span>
+                    <p class="font-bold text-slate-900 text-xs">${product}</p>
+                </div>
+                <div class="flex justify-between border-b border-slate-100 pb-2">
+                    <div>
+                        <span class="text-[10px] text-slate-500">Importador Directo</span>
+                        <p class="font-bold text-slate-900 text-xs">${supplier}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-500">Volumen</span>
+                        <p class="font-bold text-slate-900 text-xs">${qty} Unidades</p>
+                    </div>
+                </div>
+                <div class="flex justify-between pt-1">
+                    <span class="font-bold text-slate-700">Total Transacción:</span>
+                    <span class="font-bold text-terracotta-600 text-sm">$${total.toFixed(2)}</span>
+                </div>
+            `;
+            navigateTo('checkout');
+        }
+
+        function confirmOrder() {
+            if (!activeOrder) return;
+            const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+            orders.unshift({
+                id: newId,
+                supplier: activeOrder.supplier,
+                status: "Confirmado",
+                progress: "30%",
+                items: `${activeOrder.qty}x ${activeOrder.product}`,
+                total: activeOrder.total
+            });
+            renderOrders();
+            showNotificationToast(`Orden ${newId} generada exitosamente.`);
+            navigateTo('orders');
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-list');
+            container.innerHTML = orders.map(ord => `
+                <div class="bg-white text-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] text-slate-500">N° Pedido: #${ord.id}</span>
+                            <h3 class="text-xs font-bold text-slate-900">${ord.supplier}</h3>
+                            <p class="text-[10px] text-slate-600 mt-0.5">${ord.items}</p>
+                        </div>
+                        <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">${ord.status}</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-terracotta-600 h-full" style="width: ${ord.progress}"></div>
+                    </div>
+                    <button onclick="openChat('${ord.supplier}')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-xl text-xs transition">
+                        Chat y Seguimiento
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // CHAT
+        function openChat(supplierName) {
+            document.getElementById('chat-title').innerText = supplierName;
+            document.getElementById('chat-avatar').innerText = supplierName.substring(0, 2).toUpperCase();
+            navigateTo('chat');
+        }
+
+        function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('chat-messages');
+            container.innerHTML += `
+                <div class="bg-terracotta-600 text-white p-2.5 rounded-xl max-w-[80%] ml-auto">
+                    ${msg}
+                </div>
+            `;
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            setTimeout(() => {
+                container.innerHTML += `
+                    <div class="bg-slateTheme-800 p-2.5 rounded-xl max-w-[80%] text-slate-200">
+                        Gracias por responder. Nuestro almacén verificado está preparando la muestra/pedido.
+                    </div>
+                `;
+                container.scrollTop = container.scrollHeight;
+            }, 1000);
+        }
+
+        // UTILIDADES
+        function showNotificationToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notifications-panel').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
