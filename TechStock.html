@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>TechStock App - B2B Importaciones</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <script src="https://unpkg.com/lucide@latest"></script>
+ <script>
+ tailwind.config = {
+ theme: {
+ extend: {
+ colors: {
+ themeBg: {
+ 50: '#FDFBF7', // Blanco crema
+ 100: '#F3EFE0', // Beige claro pastel
+ 800: '#2A2D3E', // Lavanda oscuro suave
+ 900: '#1E202E', // Fondo base pastel oscuro
+ 950: '#141520' // Fondo profundo
+ },
+ pastelCard: '#252836', // Tarjetas pastel oscuras
+ pastelPrimary: {
+ 400: '#B8C0FF', // Lavanda pastel
+ 500: '#9381FF', // Violeta pastel
+ 600: '#7A67EE'
+ },
+ pastelMint: {
+ 300: '#A7F3D0', // Menta claro
+ 400: '#6EE7B7', // Menta pastel
+ 500: '#34D399'
+ },
+ pastelSky: {
+ 300: '#BAE6FD', // Azul cielo claro
+ 400: '#7DD3FC', // Azul cielo pastel
+ 500: '#38BDF8'
+ },
+ pastelPeach: {
+ 300: '#FDE68A', // Melocotón/Dorado suave
+ 400: '#FCA5A5', // Coral/Rosa pastel
+ 500: '#F87171'
+ }
+ }
+ }
+ }
+ }
+ </script>
+ <style>
+ .no-scrollbar::-webkit-scrollbar { display: none; }
+ .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+ body { font-family: system-ui, -apple-system, sans-serif; }
+ .tech-bg {
+ background: linear-gradient(135deg, #1E202E 0%, #2A2D3E 50%, #3B385E 100%);
+ }
+ canvas { touch-action: none; }
+ </style>
+</head>
+<body class="bg-themeBg-950 text-slate-100 flex justify-center items-center min-h-screen p-0 sm:p-4 select-none">
+
+ <div class="relative w-full sm:w-[410px] h-[100vh] sm:h-[840px] bg-themeBg-900 sm:rounded-[40px] shadow-2xl border-0 sm:border-[8px] border-themeBg-800 flex flex-col overflow-hidden">
+ 
+ <!-- BARRA DE ESTADO SUPERIOR -->
+ <div class="bg-themeBg-900 text-slate-300 text-xs px-6 pt-3 pb-2 flex justify-between items-center select-none z-50 border-b border-slate-700/50">
+ <span class="font-semibold" id="current-time">09:41</span>
+ <div class="w-16 h-4 bg-themeBg-950 rounded-full flex items-center justify-center">
+ <div class="w-3 h-3 bg-themeBg-800 rounded-full"></div>
+ </div>
+ <div class="flex items-center space-x-1.5">
+ <i data-lucide="signal" class="w-3.5 h-3.5 text-pastelPrimary-400"></i>
+ <i data-lucide="wifi" class="w-3.5 h-3.5 text-pastelSky-300"></i>
+ <i data-lucide="battery" class="w-3.5 h-3.5 text-pastelMint-400"></i>
+ </div>
+ </div>
+
+ <!-- HEADER -->
+ <header id="app-header" class="bg-themeBg-900 border-b border-slate-700/50 px-4 py-3 flex justify-between items-center z-40">
+ <div class="flex items-center space-x-2">
+ <button id="back-btn" onclick="goBack()" class="hidden text-slate-300 hover:text-white mr-1 p-1">
+ <i data-lucide="arrow-left" class="w-5 h-5"></i>
+ </button>
+ <div class="bg-pastelPrimary-500 text-white p-1.5 rounded-xl font-bold cursor-pointer shadow-md shadow-pastelPrimary-500/20" onclick="navigateTo('home')">
+ <i data-lucide="package" class="w-5 h-5"></i>
+ </div>
+ <div>
+ <h1 class="font-bold text-base text-white leading-none">TechStock</h1>
+ <span id="user-role-badge" class="text-[10px] text-pastelSky-300 font-medium">Comprador Verificado</span>
+ </div>
+ </div>
+ <div class="flex items-center space-x-2">
+ <button onclick="navigateTo('games-hub')" class="p-2 text-pastelPeach-300 hover:text-white rounded-xl bg-pastelCard border border-pastelPeach-300/30 flex items-center gap-1 text-xs font-bold shadow-sm">
+ <i data-lucide="gamepad-2" class="w-4 h-4"></i>
+ <span class="hidden sm:inline">Juegos</span>
+ </button>
+ <button onclick="toggleNotifications()" class="relative p-2 text-slate-300 hover:text-white rounded-xl bg-pastelCard border border-slate-700/50">
+ <i data-lucide="bell" class="w-4 h-4"></i>
+ <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-pastelPrimary-400 rounded-full"></span>
+ </button>
+ </div>
+ </header>
+
+ <!-- TOAST & NOTIFICACIONES -->
+ <div id="toast" class="hidden absolute top-16 left-4 right-4 bg-pastelPrimary-500 text-white text-xs px-4 py-2.5 rounded-2xl shadow-xl z-50 flex items-center justify-between border border-pastelPrimary-400/40">
+ <div class="flex items-center space-x-2">
+ <i data-lucide="check-circle" class="w-4 h-4 text-pastelMint-300"></i>
+ <span id="toast-msg">Notificación</span>
+ </div>
+ <button onclick="hideToast()"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+ </div>
+
+ <div id="notifications-panel" class="hidden absolute top-16 left-0 right-0 bottom-0 bg-themeBg-950/95 z-50 p-4 space-y-3 backdrop-blur-md">
+ <div class="flex justify-between items-center border-b border-slate-700/50 pb-2">
+ <h3 class="text-sm font-bold text-white flex items-center gap-2">
+ <i data-lucide="bell" class="w-4 h-4 text-pastelPrimary-400"></i> Avisos Recientes
+ </h3>
+ <button onclick="toggleNotifications()" class="text-xs text-slate-400">Cerrar</button>
+ </div>
+ <div class="space-y-2 text-xs">
+ <div class="p-3 bg-pastelCard rounded-2xl border border-slate-700/50 flex items-start gap-3">
+ <i data-lucide="trophy" class="w-4 h-4 text-pastelPeach-300 mt-0.5"></i>
+ <div>
+ <p class="font-semibold text-white">¡Recompensa Desbloqueada!</p>
+ <p class="text-[10px] text-slate-300">Ganas descuentos reales en tus compras jugando Tetris y Market Frenzy.</p>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- CONTENEDOR PRINCIPAL -->
+ <main class="flex-1 overflow-y-auto no-scrollbar relative bg-themeBg-900" id="main-container">
+ 
+    <!-- PANTALLA LOGIN -->
+ <section id="screen-login" class="screen tech-bg p-6 flex flex-col justify-between h-full text-white">
+ <div class="pt-8 text-center space-y-3">
+ <div class="w-16 h-16 bg-pastelPrimary-500/20 border border-pastelPrimary-400/40 rounded-2xl mx-auto flex items-center justify-center text-pastelPrimary-400 shadow-xl">
+ <i data-lucide="box" class="w-8 h-8"></i>
+ </div>
+ <h1 class="text-3xl font-extrabold text-white tracking-tight">TechStock</h1>
+ <p class="text-xs font-semibold text-slate-300">Abastece tu negocio en minutos y gana recompensas jugando</p>
+ 
+ <form onsubmit="handleLogin(event)" class="space-y-3 text-left pt-6">
+ <div>
+ <input type="text" placeholder="Usuario / RUC" value="20601234567" required class="w-full bg-pastelCard/80 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-pastelPrimary-400">
+ </div>
+ <div>
+ <input type="password" placeholder="Contraseña" value="••••••••" required class="w-full bg-pastelCard/80 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-pastelPrimary-400">
+ </div>
+ <button type="submit" class="w-full bg-pastelPrimary-500 hover:bg-pastelPrimary-600 text-white font-bold py-3.5 rounded-xl text-xs shadow-lg shadow-pastelPrimary-500/30 transition">
+
+ Iniciar Sesión
+ </button>
+ </form>
+ </div>
+
+ <div class="space-y-2 pt-4 border-t border-slate-700/50 text-center">
+ <p class="text-xs text-slate-400">¿Nuevo en TechStock?</p>
+ <button onclick="handleLogin(event)" class="w-full bg-pastelCard hover:bg-themeBg-800 text-white font-bold py-3 rounded-xl text-xs transition border border-slate-700/70">
+ Contactar a Ventas
+ </button>
+ </div>
+ </section>
+
+ <!-- PANTALLA INICIO -->
+ <section id="screen-home" class="screen hidden p-4 space-y-4">
+ <div class="flex justify-between items-center text-xs">
+ <div>
+ <span class="text-slate-400">Bienvenido de nuevo</span>
+ <h2 class="text-base font-bold text-white">Jessyca <span class="text-xs font-normal text-pastelSky-300">(Revendedor)</span></h2>
+ </div>
+ <div class="bg-pastelMint-400/10 border border-pastelMint-400/30 text-pastelMint-300 text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
+ <i data-lucide="award" class="w-3.5 h-3.5"></i>
+ <span>Nivel: Franchise</span>
+ </div>
+ </div>
+
+ <form onsubmit="handleHomeSearchSubmit(event)" class="relative">
+ <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+ <input type="text" id="home-search" placeholder="Buscar modelo, repuesto..." class="w-full bg-pastelCard text-white placeholder-slate-400 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none border border-slate-700/60">
+ </form>
+
+ <!-- BANNER JUEGOS Y RECOMPENSAS -->
+ <div class="bg-gradient-to-r from-pastelPrimary-500 to-indigo-600 p-3.5 rounded-2xl text-white space-y-2 border border-pastelPrimary-400/40 shadow-lg relative overflow-hidden">
+ <div class="flex items-center justify-between">
+ <span class="bg-pastelPeach-300/20 text-pastelPeach-300 border border-pastelPeach-300/40 text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+ <i data-lucide="gamepad-2" class="w-3 h-3"></i> ¡Gana Descuentos Jugando!
+ </span>
+ <span class="text-[10px] text-pastelSky-300 font-bold" id="shipping-discount-badge">Desc. Envío: 0%</span>
+ </div>
+ <p class="text-xs font-bold text-white leading-tight">Optimiza tu carga en contenedores o compite en el mercado para ganar beneficios B2B.</p>
+ <div class="flex gap-2 pt-1">
+ <button onclick="startPackingGame()" class="flex-1 bg-pastelPeach-300 hover:bg-pastelPeach-400 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition shadow-sm">
+ <i data-lucide="box" class="w-3.5 h-3.5"></i> Tetris Packing
+ </button>
+ <button onclick="startMarketGame()" class="flex-1 bg-pastelSky-300 hover:bg-pastelSky-400 text-slate-900 font-bold py-1.5 px-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition shadow-sm">
+ <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Market Frenzy
+ </button>
+ </div>
+ </div>
+
+ <div>
+ <h3 class="text-xs font-bold text-slate-300 mb-2">Categorías Principales</h3>
+ <div class="grid grid-cols-4 gap-2">
+ <button onclick="filterCategory('cargadores')" class="bg-pastelCard text-slate-200 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-700/60 hover:border-pastelPrimary-400 transition">
+ <i data-lucide="zap" class="w-5 h-5 text-pastelSky-400 mb-1"></i>
+ <span class="text-[10px] font-semibold">Cargadores</span>
+ </button>
+ <button onclick="filterCategory('audio')" class="bg-pastelCard text-slate-200 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-700/60 hover:border-pastelPrimary-400 transition">
+ <i data-lucide="headphones" class="w-5 h-5 text-pastelPrimary-400 mb-1"></i>
+ <span class="text-[10px] font-semibold">Audio</span>
+ </button>
+ <button onclick="filterCategory('fundas')" class="bg-pastelCard text-slate-200 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-700/60 hover:border-pastelPrimary-400 transition">
+ <i data-lucide="smartphone" class="w-5 h-5 text-pastelPeach-400 mb-1"></i>
+ <span class="text-[10px] font-semibold">Fundas</span>
+ </button>
+ <button onclick="filterCategory('cables')" class="bg-pastelCard text-slate-200 p-2.5 rounded-xl flex flex-col items-center justify-center border border-slate-700/60 hover:border-pastelPrimary-400 transition">
+ <i data-lucide="cable" class="w-5 h-5 text-pastelMint-400 mb-1"></i>
+ <span class="text-[10px] font-semibold">Cables</span>
+ </button>
+ </div>
+ </div>
+
+ <div>
+ <div class="flex justify-between items-center mb-2">
+ <h3 class="text-xs font-bold text-slate-300">Importadores Destacados</h3>
+ <button onclick="navigateTo('directory')" class="text-[11px] text-pastelSky-400 font-semibold hover:underline">Ver todos</button>
+ </div>
+ <div id="top-importers-list" class="space-y-2"></div>
+ </div>
+ </section>
+
+ <!-- HUB DE JUEGOS -->
+ <section id="screen-games-hub" class="screen hidden p-4 space-y-4">
+ <div>
+ <h2 class="text-base font-bold text-white flex items-center gap-2">
+ <i data-lucide="gamepad-2" class="w-5 h-5 text-pastelPeach-300"></i> Zona de Minijuegos B2B
+ </h2>
+ <p class="text-xs text-slate-400">Demuestra tus habilidades logísticas y comerciales para ganar beneficios reales.</p>
+ </div>
+
+ <div class="space-y-3">
+ <!-- TARJETA TETRIS PACKING -->
+ <div class="bg-pastelCard border border-slate-700/70 rounded-2xl p-4 space-y-3">
+ <div class="flex justify-between items-start">
+ <div>
+ <span class="text-[10px] bg-pastelPeach-300/20 text-pastelPeach-300 border border-pastelPeach-300/30 px-2 py-0.5 rounded-full font-bold">Optimización Carga</span>
+ <h3 class="text-sm font-bold text-white mt-1">Tetris Packing</h3>
+ </div>
+ <i data-lucide="box" class="w-6 h-6 text-pastelPeach-300"></i>
+ </div>
+ <p class="text-xs text-slate-300">Acomoda cajas de importación en el contenedor. Usa las 7 piezas, guarda cajas estratégicamente y completa filas.</p>
+ <div class="bg-themeBg-900 p-2 rounded-xl text-[10px] text-pastelMint-300 border border-pastelMint-400/20 flex items-center gap-1.5">
+ <i data-lucide="gift" class="w-3.5 h-3.5"></i>
+ <span><strong>Recompensa:</strong> Hasta 20% de descuento directo en costo de envío.</span>
+ </div>
+ <button onclick="startPackingGame()" class="w-full bg-pastelPeach-300 hover:bg-pastelPeach-400 text-slate-900 font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+ Jugar Tetris Packing
+ </button>
+ </div>
+
+ <!-- TARJETA MARKET FRENZY -->
+ <div class="bg-pastelCard border border-slate-700/70 rounded-2xl p-4 space-y-3">
+ <div class="flex justify-between items-start">
+ <div>
+ <span class="text-[10px] bg-pastelSky-300/20 text-pastelSky-300 border border-pastelSky-300/30 px-2 py-0.5 rounded-full font-bold">Competencia Comercial</span>
+ <h3 class="text-sm font-bold text-white mt-1">Market Frenzy</h3>
+ </div>
+ <i data-lucide="trending-up" class="w-6 h-6 text-pastelSky-400"></i>
+ </div>
+ <p class="text-xs text-slate-300">Crece despacio y esquiva a los peces gigantes. ¡Alcanza 300 puntos para obtener el 100% del objetivo de descuento (-50% M.O.Q.)!</p>
+ <div class="bg-themeBg-900 p-2 rounded-xl text-[10px] text-pastelMint-300 border border-pastelMint-400/20 flex items-center gap-1.5">
+ <i data-lucide="award" class="w-3.5 h-3.5"></i>
+ <span><strong>Recompensa:</strong> Hasta -50% de reducción en el M.O.Q. de tus pedidos.</span>
+ </div>
+ <button onclick="startMarketGame()" class="w-full bg-pastelSky-400 hover:bg-pastelSky-500 text-slate-900 font-bold py-2.5 rounded-xl text-xs transition shadow-sm">
+ Jugar Market Frenzy
+ </button>
+ </div>
+ </div>
+ </section>
+
+ <!-- JUEGO 1: TETRIS PACKING -->
+ <section id="screen-game-packing" class="screen hidden p-3 flex flex-col h-full justify-between">
+ <div>
+ <div class="flex justify-between items-center mb-1">
+ <h2 class="text-xs font-bold text-white flex items-center gap-1">
+ <i data-lucide="box" class="w-4 h-4 text-pastelPeach-300"></i> Tetris Packing
+ </h2>
+ <div class="flex items-center gap-2">
+ <canvas id="tetris-hold-canvas" width="40" height="40" class="bg-themeBg-950 border border-slate-700/60 rounded-lg"></canvas>
+ <button onclick="holdTetrisPiece()" class="bg-pastelCard hover:bg-themeBg-800 text-pastelPeach-300 text-[10px] font-bold px-2 py-1.5 rounded-lg border border-slate-700/60">
+ Guardar (Hold)
+ </button>
+ </div>
+ </div>
+
+ <div class="bg-themeBg-950 p-1.5 rounded-2xl border border-slate-700/60 flex justify-center items-center relative overflow-hidden">
+ <canvas id="tetris-canvas" width="200" height="320" class="bg-themeBg-900 border border-slate-700/60 rounded-lg"></canvas>
+ 
+ <!-- OVERLAY DE PUNTAJE Y DESCUENTO -->
+ <div class="absolute top-3 right-3 bg-themeBg-950/90 backdrop-blur-md border border-slate-700/80 p-2 rounded-xl text-right text-[10px] space-y-0.5 shadow-lg pointer-events-none">
+ <div class="text-slate-400">Puntaje: <span id="tetris-score-overlay" class="font-bold text-white">0</span></div>
+ <div class="text-slate-400">Desc. Envío: <span id="packing-discount-val" class="font-bold text-pastelMint-300">0%</span></div>
+ </div>
+ </div>
+ </div>
+
+ <!-- CONTROLES TETRIS -->
+ <div class="space-y-1.5 mt-1">
+ <div class="grid grid-cols-5 gap-1.5">
+ <button onclick="moveTetris(-1)" class="bg-pastelCard active:bg-themeBg-800 text-white py-3 rounded-xl font-bold text-sm border border-slate-700/60 flex items-center justify-center">
+ <i data-lucide="arrow-left" class="w-5 h-5"></i>
+ </button>
+ <button onclick="moveTetrisDown()" class="bg-pastelCard active:bg-themeBg-800 text-slate-300 py-3 rounded-xl font-bold text-sm border border-slate-700/60 flex items-center justify-center">
+ <i data-lucide="arrow-down" class="w-5 h-5"></i>
+ </button>
+ <button onclick="rotateTetris()" class="bg-pastelCard active:bg-themeBg-800 text-pastelPeach-300 py-3 rounded-xl font-bold text-sm border border-slate-700/60 flex items-center justify-center">
+ <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+ </button>
+ <button onclick="moveTetris(1)" class="bg-pastelCard active:bg-themeBg-800 text-white py-3 rounded-xl font-bold text-sm border border-slate-700/60 flex items-center justify-center">
+ <i data-lucide="arrow-right" class="w-5 h-5"></i>
+ </button>
+ <button onclick="dropTetris()" class="bg-pastelPeach-300 active:bg-pastelPeach-400 text-slate-900 py-3 rounded-xl font-bold text-sm flex items-center justify-center shadow-md">
+ <i data-lucide="chevrons-down" class="w-5 h-5"></i>
+ </button>
+ </div>
+ <button onclick="claimPackingReward()" class="w-full bg-pastelMint-500 hover:bg-pastelMint-400 text-slate-950 font-bold py-2 rounded-xl text-xs transition shadow-md">
+ Aplicar Descuento a mis Envíos
+ </button>
+ </div>
+ </section>
+
+ <!-- JUEGO 2: MARKET FRENZY (MODIFICADO) -->
+ <section id="screen-game-market" class="screen hidden p-3 flex flex-col h-full justify-between">
+ <div>
+ <div class="flex justify-between items-center mb-1">
+ <div>
+ <h2 class="text-xs font-bold text-white flex items-center gap-1">
+ <i data-lucide="trending-up" class="w-4 h-4 text-pastelSky-400"></i> Market Frenzy
+ </h2>
+ <p class="text-[9px] text-slate-400">Objetivo: ¡Meta de 300 pts para Máximo Descuento!</p>
+ </div>
+ <div class="text-right">
+ <span class="text-[9px] text-slate-400">Tiempo restante:</span>
+ <p class="text-xs font-bold text-pastelPeach-300" id="market-timer">60s</p>
+ </div>
+ </div>
+
+ <!-- BARRA DE META / PORCENTAJE DE OBJETIVO -->
+ <div class="mb-2 bg-themeBg-950 p-1.5 rounded-xl border border-slate-700/60 space-y-1">
+ <div class="flex justify-between text-[10px] font-bold">
+ <span class="text-slate-300">Meta Descuento Máximo:</span>
+ <span id="market-target-percent" class="text-pastelMint-300">0%</span>
+ </div>
+ <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+ <div id="market-progress-bar" class="bg-gradient-to-r from-pastelSky-400 to-pastelMint-400 h-full w-0 transition-all duration-300"></div>
+ </div>
+ </div>
+
+ <div class="bg-themeBg-950 p-1.5 rounded-2xl border border-slate-700/60 flex justify-center items-center relative overflow-hidden">
+ <canvas id="market-canvas" width="310" height="320" class="bg-themeBg-950 border border-slate-800 rounded-xl cursor-crosshair"></canvas>
+ 
+ <!-- AVISO DE DEPREDADORES EN PANTALLA -->
+ <div id="market-alert" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-pastelPeach-500/95 text-white text-[10px] font-bold px-3 py-1 rounded-full border border-pastelPeach-400 shadow-lg animate-bounce z-10">
+ ⚠️ ¡Peces Gigantes Detectados!
+ </div>
+ </div>
+ </div>
+
+ <div class="space-y-1.5 mt-1">
+ <div class="bg-pastelCard p-2 rounded-xl text-[10px] text-slate-300 border border-slate-700/60 flex justify-between">
+ <span>Puntaje Total: <strong id="market-score" class="text-white">0</strong> / 300</span>
+ <span>M.O.Q. Reducido: <strong id="market-moq-bonus" class="text-pastelMint-300">0%</strong></span>
+ </div>
+ <button onclick="claimMarketReward()" class="w-full bg-pastelPrimary-500 hover:bg-pastelPrimary-600 text-white font-bold py-2 rounded-xl text-xs transition shadow-md">
+ Guardar Beneficios en Mi Perfil
+ </button>
+ </div>
+ </section>
+
+ <!-- DIRECTORIO -->
+ <section id="screen-directory" class="screen hidden p-4 space-y-4">
+ <div class="flex justify-between items-center">
+ <div>
+ <h2 class="text-base font-bold text-white">Directorio de Importadores</h2>
+ <p class="text-[10px] text-slate-400">Verificados presencialmente en almacén</p>
+ </div>
+ <span class="text-xs text-slate-400"><span id="imp-count">3</span> Activos</span>
+ </div>
+ <div id="full-directory-list" class="space-y-3"></div>
+ </section>
+
+ <!-- RFQ / COTIZACIÓN -->
+ <section id="screen-rfq" class="screen hidden p-4 space-y-4">
+ <div>
+ <h2 class="text-base font-bold text-white">Cotización Masiva / Flash</h2>
+ <p class="text-xs text-slate-400">Ahorra tiempo: elimina la cotización uno a uno.</p>
+ </div>
+
+ <form onsubmit="submitRFQ(event)" class="space-y-3 bg-pastelCard border border-slate-700/60 text-white p-4 rounded-2xl shadow-md">
+ <div>
+ <label class="block text-xs font-bold text-slate-300 mb-1">Producto o Modelo Específico</label>
+ <select id="rfq-product" class="w-full bg-themeBg-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-pastelPrimary-400">
+ </select>
+ </div>
+
+ <div>
+ <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+ <span>Cantidad solicitada</span>
+ <span id="qty-val" class="text-pastelSky-400">500 Unidades</span>
+ </div>
+ <input type="range" id="qty-range" min="50" max="5000" step="50" value="500" oninput="updateQty(this.value)" class="w-full accent-pastelPrimary-400">
+ </div>
+
+ <button type="submit" class="w-full bg-pastelPrimary-500 hover:bg-pastelPrimary-600 text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-md">
+ <i data-lucide="send" class="w-4 h-4"></i>
+ <span>Enviar Cotización Flash Masiva</span>
+ </button>
+ </form>
+ </section>
+
+ <!-- CATÁLOGO -->
+ <section id="screen-catalog" class="screen hidden p-4 space-y-3">
+ <div class="flex justify-between items-center">
+ <h2 class="text-base font-bold text-white">Catálogo e Inventario</h2>
+ <select id="catalog-category-filter" onchange="applyCatalogFilters()" class="bg-pastelCard text-slate-200 text-xs rounded-lg px-2.5 py-1.5 border border-slate-700/60">
+ <option value="all">Todas las categorías</option>
+ <option value="cargadores">Cargadores</option>
+ <option value="cables">Cables</option>
+ <option value="audio">Audio</option>
+ <option value="fundas">Fundas</option>
+ </select>
+ </div>
+
+ <div id="catalog-products-grid" class="grid grid-cols-2 gap-3"></div>
+ </section>
+
+ <!-- DETALLE DE PRODUCTO -->
+ <section id="screen-product-detail" class="screen hidden p-4 space-y-4">
+ <div id="product-detail-content"></div>
+ </section>
+
+ <!-- CHECKOUT -->
+ <section id="screen-checkout" class="screen hidden p-4 space-y-4">
+ <h2 class="text-base font-bold text-white">Confirmar Pedido Directo</h2>
+ <div class="bg-pastelCard text-white p-4 rounded-2xl shadow-md space-y-3 text-xs border border-slate-700/60" id="checkout-summary">
+ </div>
+ 
+ <button onclick="confirmOrder()" class="w-full bg-pastelPrimary-500 text-white font-bold py-3.5 rounded-xl text-xs hover:bg-pastelPrimary-600 transition shadow-md">
+ Confirmar Transacción
+ </button>
+ </section>
+
+ <!-- MIS PEDIDOS -->
+ <section id="screen-orders" class="screen hidden p-4 space-y-4">
+ <h2 class="text-base font-bold text-white">Mis Pedidos Realizados</h2>
+ <div id="orders-list" class="space-y-3"></div>
+ </section>
+
+ </main>
+
+ <!-- BOTTOM NAV -->
+ <nav id="bottom-nav" class="bg-themeBg-900 border-t border-slate-700/50 px-2 py-1 grid grid-cols-5 gap-1 z-40">
+ <button onclick="navigateTo('home')" id="nav-home" class="nav-item text-pastelPrimary-400 flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition">
+ <i data-lucide="home" class="w-5 h-5"></i>
+ <span class="text-[9px] mt-0.5 font-medium">Inicio</span>
+ </button>
+ <button onclick="navigateTo('directory')" id="nav-directory" class="nav-item text-slate-400 flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition">
+ <i data-lucide="users" class="w-5 h-5"></i>
+ <span class="text-[9px] mt-0.5 font-medium">Directorio</span>
+ </button>
+ <button onclick="navigateTo('games-hub')" id="nav-games-hub" class="nav-item text-slate-400 flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition">
+ <div class="bg-pastelPeach-300 text-slate-950 p-2 rounded-full -mt-4 shadow-lg border-2 border-themeBg-900">
+ <i data-lucide="gamepad-2" class="w-4 h-4"></i>
+ </div>
+ <span class="text-[9px] text-pastelPeach-300 font-bold mt-0.5">Juegos</span>
+ </button>
+ <button onclick="navigateTo('catalog')" id="nav-catalog" class="nav-item text-slate-400 flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition">
+ <i data-lucide="grid" class="w-5 h-5"></i>
+ <span class="text-[9px] mt-0.5 font-medium">Catálogo</span>
+ </button>
+ <button onclick="navigateTo('orders')" id="nav-orders" class="nav-item text-slate-400 flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition">
+ <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+ <span class="text-[9px] mt-0.5 font-medium">Pedidos</span>
+ </button>
+ </nav>
+
+ </div>
+
+ <script>
+ // DATOS DE PRUEBA
+ const importers = [
+ { id: 1, name: "Asia Tech Import S.A.C.", desc: "Accesorios y Carga Rápida (M.O.Q. Flexible)", rating: 4.9, moq: 50 },
+ { id: 2, name: "Global Electronics", desc: "Audio y Cables Trenzados Directos", rating: 4.7, moq: 20 },
+ { id: 3, name: "Importadora MegaStock", desc: "Fundas y Vidrios con Stock Garantizado", rating: 4.8, moq: 30 }
+ ];
+
+ const products = [
+ { id: 101, name: "Cable USB-C Carga Rápida 1m", category: "cables", price: 1.20, moq: 100, stock: 4500, supplier: "Asia Tech Import S.A.C.", image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&auto=format&fit=crop&q=80" },
+ { id: 102, name: "Cargador Pared 20W Type-C", category: "cargadores", price: 2.80, moq: 50, stock: 1200, supplier: "Asia Tech Import S.A.C.", image: "https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=300&auto=format&fit=crop&q=80" },
+ { id: 103, name: "Audífonos Bluetooth TWS", category: "audio", price: 6.50, moq: 20, stock: 800, supplier: "Global Electronics", image: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300&auto=format&fit=crop&q=80" },
+ { id: 104, name: "Funda Protectora Anti-Caídas", category: "fundas", price: 0.90, moq: 100, stock: 3000, supplier: "Importadora MegaStock", image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=300&auto=format&fit=crop&q=80" }
+ ];
+
+ let orders = [{ id: "ORD-9421", supplier: "Asia Tech Import S.A.C.", status: "En Camino", progress: "70%", items: "500x Cable USB-C 1m", total: 600.00 }];
+ let shippingDiscount = 0;
+ let moqBonus = 0;
+ let activeOrder = null;
+ let historyStack = ['login'];
+
+ window.onload = () => {
+ lucide.createIcons();
+ renderImporters();
+ renderCatalog(products);
+ renderOrders();
+ populateRFQSelect();
+ };
+
+ function navigateTo(screenId, pushToHistory = true) {
+ if (pushToHistory && historyStack[historyStack.length - 1] !== screenId) {
+ historyStack.push(screenId);
+ }
+
+ document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+ const targetScreen = document.getElementById(`screen-${screenId}`);
+ if (targetScreen) targetScreen.classList.remove('hidden');
+
+ document.querySelectorAll('.nav-item').forEach(btn => {
+ btn.classList.remove('text-pastelPrimary-400');
+ btn.classList.add('text-slate-400');
+ });
+ const activeNav = document.getElementById(`nav-${screenId}`);
+ if (activeNav) {
+ activeNav.classList.remove('text-slate-400');
+ activeNav.classList.add('text-pastelPrimary-400');
+ }
+
+ const backBtn = document.getElementById('back-btn');
+ if (screenId !== 'home' && screenId !== 'login') {
+ backBtn.classList.remove('hidden');
+ } else {
+ backBtn.classList.add('hidden');
+ }
+
+ const bottomNav = document.getElementById('bottom-nav');
+ if (screenId === 'login') {
+ bottomNav.classList.add('hidden');
+ } else {
+ bottomNav.classList.remove('hidden');
+ }
+ }
+
+ function goBack() {
+ if (historyStack.length > 1) {
+ historyStack.pop();
+ const previous = historyStack[historyStack.length - 1];
+ navigateTo(previous, false);
+ }
+ }
+
+ function handleLogin(e) {
+ e.preventDefault();
+ showNotificationToast("¡Bienvenido a TechStock!");
+ navigateTo('home');
+ }
+
+ function renderImporters() {
+ const listHtml = importers.map(imp => `
+ <div class="bg-pastelCard text-white p-3.5 rounded-2xl border border-slate-700/60 flex justify-between items-center text-xs">
+ <div>
+ <span class="font-bold text-white">${imp.name}</span>
+ <p class="text-[10px] text-slate-400 mt-0.5">${imp.desc}</p>
+ <span class="text-[10px] text-pastelPeach-300 font-bold">★ ${imp.rating} | M.O.Q.: ${imp.moq} u</span>
+ </div>
+ <button onclick="navigateTo('rfq')" class="bg-pastelPrimary-500 text-white font-bold px-3 py-1.5 rounded-xl text-[11px] shadow-sm">Cotizar</button>
+ </div>
+ `).join('');
+
+ document.getElementById('top-importers-list').innerHTML = listHtml;
+ document.getElementById('full-directory-list').innerHTML = listHtml;
+ document.getElementById('imp-count').innerText = importers.length;
+ lucide.createIcons();
+ }
+
+ function renderCatalog(items) {
+ const container = document.getElementById('catalog-products-grid');
+ container.innerHTML = items.map(prod => `
+ <div onclick="showProductDetail(${prod.id})" class="bg-pastelCard text-white p-3 rounded-2xl border border-slate-700/60 cursor-pointer hover:border-pastelPrimary-400 transition flex flex-col justify-between">
+ <div>
+ <div class="bg-themeBg-950 h-28 rounded-xl overflow-hidden mb-2 relative border border-slate-800">
+ <img src="${prod.image}" alt="${prod.name}" class="w-full h-full object-cover">
+ </div>
+ <h4 class="text-xs font-bold text-white leading-snug line-clamp-2">${prod.name}</h4>
+ </div>
+ <div class="mt-2 pt-2 border-t border-slate-700/50 flex justify-between items-center">
+ <span class="text-xs font-bold text-pastelSky-400">$${prod.price.toFixed(2)}</span>
+ <span class="text-[9px] bg-themeBg-900 px-1.5 py-0.5 rounded text-slate-300">MOQ: ${prod.moq}</span>
+ </div>
+ </div>
+ `).join('');
+ lucide.createIcons();
+ }
+
+ function showProductDetail(prodId) {
+ const prod = products.find(p => p.id === prodId);
+ if (!prod) return;
+
+ document.getElementById('product-detail-content').innerHTML = `
+ <div class="bg-pastelCard text-white p-4 rounded-2xl space-y-3 border border-slate-700/60">
+ <img src="${prod.image}" alt="${prod.name}" class="w-full h-44 object-cover rounded-xl">
+ <h2 class="text-base font-bold text-white">${prod.name}</h2>
+ <p class="text-xs text-slate-400">Importador: <strong>${prod.supplier}</strong></p>
+ <div class="flex justify-between items-center bg-themeBg-900 p-3 rounded-xl border border-slate-700/40">
+ <span class="text-base font-bold text-pastelSky-400">$${prod.price.toFixed(2)}/u</span>
+ <span class="text-xs font-bold text-pastelMint-300">${prod.stock} disponibles</span>
+ </div>
+ <button onclick="startCheckout('${prod.name}', '${prod.supplier}', ${prod.price}, ${prod.moq})" class="w-full bg-pastelPrimary-500 text-white font-bold py-3 rounded-xl text-xs shadow-md">
+ Comprar Lote Mínimo (${prod.moq} u)
+ </button>
+ </div>
+ `;
+ navigateTo('product-detail');
+ }
+
+ function populateRFQSelect() {
+ document.getElementById('rfq-product').innerHTML = products.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+ }
+
+ function updateQty(val) { document.getElementById('qty-val').innerText = `${val} Unidades`; }
+
+ function submitRFQ(e) {
+ e.preventDefault();
+ showNotificationToast("Cotización Flash enviada.");
+ navigateTo('home');
+ }
+
+ function startCheckout(product, supplier, unitPrice, qty) {
+ const subtotal = unitPrice * qty;
+ let shipping = 25.00 * (1 - (shippingDiscount / 100));
+ const total = subtotal + shipping;
+
+ activeOrder = { product, supplier, unitPrice, qty, subtotal, shipping, total };
+
+ document.getElementById('checkout-summary').innerHTML = `
+ <p class="font-bold text-white text-xs">${product}</p>
+ <p class="text-[10px] text-slate-400">Proveedor: ${supplier}</p>
+ <div class="flex justify-between text-xs pt-2 border-t border-slate-700/50">
+ <span>Total (con ${shippingDiscount}% OFF en envío):</span>
+ <span class="font-bold text-pastelSky-400">$${total.toFixed(2)}</span>
+ </div>
+ `;
+ navigateTo('checkout');
+ }
+
+ function confirmOrder() {
+ if (!activeOrder) return;
+ const newId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+ orders.unshift({
+ id: newId,
+ supplier: activeOrder.supplier,
+ status: "Confirmado",
+ progress: "30%",
+ items: `${activeOrder.qty}x ${activeOrder.product}`,
+ total: activeOrder.total
+ });
+ renderOrders();
+ showNotificationToast(`Orden ${newId} generada exitosamente.`);
+ navigateTo('orders');
+ }
+
+ function renderOrders() {
+ document.getElementById('orders-list').innerHTML = orders.map(ord => `
+ <div class="bg-pastelCard text-white p-4 rounded-2xl border border-slate-700/60 space-y-2">
+ <div class="flex justify-between items-start">
+ <div>
+ <span class="text-[10px] text-slate-400">#${ord.id}</span>
+ <h3 class="text-xs font-bold text-white">${ord.supplier}</h3>
+ </div>
+ <span class="bg-pastelMint-400/20 text-pastelMint-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-pastelMint-400/30">${ord.status}</span>
+ </div>
+ <p class="text-xs text-slate-300">${ord.items}</p>
+ </div>
+ `).join('');
+ }
+
+ function showNotificationToast(msg) {
+ const toast = document.getElementById('toast');
+ document.getElementById('toast-msg').innerText = msg;
+ toast.classList.remove('hidden');
+ setTimeout(() => toast.classList.add('hidden'), 3000);
+ }
+
+ function hideToast() { document.getElementById('toast').classList.add('hidden'); }
+ function toggleNotifications() { document.getElementById('notifications-panel').classList.toggle('hidden'); }
+
+ /* ========================================================
+ LOGICA DE VIDEOJUEGOS
+ ======================================================== */
+
+ // --- GAME 1: TETRIS PACKING ---
+ let tetrisInterval = null;
+ const tCanvas = document.getElementById('tetris-canvas');
+ const tCtx = tCanvas.getContext('2d');
+ const tHoldCanvas = document.getElementById('tetris-hold-canvas');
+ const tHoldCtx = tHoldCanvas.getContext('2d');
+
+ const T_ROWS = 16, T_COLS = 10, T_SIZE = 20;
+ let tetrisBoard = Array(T_ROWS).fill().map(() => Array(T_COLS).fill(0));
+ let currentPiece = null;
+ let heldPiece = null;
+ let canHold = true;
+ let tetrisScore = 0;
+
+ const TETRIS_SHAPES = [
+ { shape: [[1,1,1,1]], color: '#7DD3FC', label: 'I' },
+ { shape: [[1,1],[1,1]], color: '#FDE68A', label: 'O' },
+ { shape: [[0,1,0],[1,1,1]], color: '#C084FC', label: 'T' },
+ { shape: [[0,1,1],[1,1,0]], color: '#6EE7B7', label: 'S' },
+ { shape: [[1,1,0],[0,1,1]], color: '#FCA5A5', label: 'Z' },
+ { shape: [[1,0,0],[1,1,1]], color: '#93C5FD', label: 'J' },
+ { shape: [[0,0,1],[1,1,1]], color: '#FDBA74', label: 'L' }
+ ];
+
+ function startPackingGame() {
+ navigateTo('game-packing');
+ resetTetris();
+ if (tetrisInterval) clearInterval(tetrisInterval);
+ tetrisInterval = setInterval(updateTetris, 500);
+ }
+
+ function resetTetris() {
+ tetrisBoard = Array(T_ROWS).fill().map(() => Array(T_COLS).fill(0));
+ tetrisScore = 0;
+ heldPiece = null;
+ canHold = true;
+ updateTetrisScoreUI();
+ drawHoldPiece();
+ spawnPiece();
+ drawTetris();
+ }
+
+ function spawnPiece() {
+ const idx = Math.floor(Math.random() * TETRIS_SHAPES.length);
+ const pieceData = TETRIS_SHAPES[idx];
+ currentPiece = {
+ shape: pieceData.shape,
+ color: pieceData.color,
+ row: 0,
+ col: Math.floor((T_COLS - pieceData.shape[0].length) / 2)
+ };
+ canHold = true;
+ }
+
+ function updateTetris() {
+ if (!currentPiece) return;
+ if (canMove(currentPiece.row + 1, currentPiece.col, currentPiece.shape)) {
+ currentPiece.row++;
+ } else {
+ mergePiece();
+ checkLines();
+ spawnPiece();
+ if (!canMove(currentPiece.row, currentPiece.col, currentPiece.shape)) {
+ clearInterval(tetrisInterval);
+ showNotificationToast("¡Contenedor Completo!");
+ }
+ }
+ drawTetris();
+ }
+
+ function moveTetrisDown() {
+ if (!currentPiece) return;
+ if (canMove(currentPiece.row + 1, currentPiece.col, currentPiece.shape)) {
+ currentPiece.row++;
+ drawTetris();
+ }
+ }
+
+ function holdTetrisPiece() {
+ if (!canHold || !currentPiece) return;
+ 
+ const currentTypeIndex = TETRIS_SHAPES.findIndex(p => p.color === currentPiece.color);
+ 
+ if (heldPiece === null) {
+ heldPiece = TETRIS_SHAPES[currentTypeIndex];
+ spawnPiece();
+ } else {
+ const temp = heldPiece;
+ heldPiece = TETRIS_SHAPES[currentTypeIndex];
+ currentPiece = {
+ shape: temp.shape,
+ color: temp.color,
+ row: 0,
+ col: Math.floor((T_COLS - temp.shape[0].length) / 2)
+ };
+ }
+ canHold = false;
+ drawHoldPiece();
+ drawTetris();
+ }
+
+ function drawHoldPiece() {
+ tHoldCtx.fillStyle = '#141520';
+ tHoldCtx.fillRect(0, 0, tHoldCanvas.width, tHoldCanvas.height);
+ if (heldPiece) {
+ drawBoxGrid(tHoldCtx, heldPiece.shape, 5, 5, 8, heldPiece.color);
+ }
+ }
+
+ function canMove(r, c, shape) {
+ for (let row = 0; row < shape.length; row++) {
+ for (let col = 0; col < shape[row].length; col++) {
+ if (shape[row][col]) {
+ let newR = r + row;
+ let newC = c + col;
+ if (newR >= T_ROWS || newC < 0 || newC >= T_COLS || (newR >= 0 && tetrisBoard[newR][newC])) {
+ return false;
+ }
+ }
+ }
+ }
+ return true;
+ }
+
+ function mergePiece() {
+ currentPiece.shape.forEach((row, r) => {
+ row.forEach((val, c) => {
+ if (val) tetrisBoard[currentPiece.row + r][currentPiece.col + c] = currentPiece.color;
+ });
+ });
+ }
+
+ function checkLines() {
+ let linesCleared = 0;
+ for (let r = T_ROWS - 1; r >= 0; r--) {
+ if (tetrisBoard[r].every(cell => cell !== 0)) {
+ tetrisBoard.splice(r, 1);
+ tetrisBoard.unshift(Array(T_COLS).fill(0));
+ linesCleared++;
+ r++;
+ }
+ }
+ if (linesCleared > 0) {
+ tetrisScore += linesCleared * 100;
+ shippingDiscount = Math.min(shippingDiscount + linesCleared * 5, 20);
+ updateTetrisScoreUI();
+ }
+ }
+
+ function updateTetrisScoreUI() {
+ document.getElementById('tetris-score-overlay').innerText = tetrisScore;
+ document.getElementById('packing-discount-val').innerText = `${shippingDiscount}%`;
+ document.getElementById('shipping-discount-badge').innerText = `Desc. Envío: ${shippingDiscount}%`;
+ }
+
+ function drawTetris() {
+ tCtx.fillStyle = '#1E202E';
+ tCtx.fillRect(0, 0, tCanvas.width, tCanvas.height);
+
+ for (let r = 0; r < T_ROWS; r++) {
+ for (let c = 0; c < T_COLS; c++) {
+ if (tetrisBoard[r][c]) {
+ drawSingleBox(tCtx, c * T_SIZE, r * T_SIZE, T_SIZE, tetrisBoard[r][c]);
+ }
+ }
+ }
+
+ if (currentPiece) {
+ currentPiece.shape.forEach((row, r) => {
+ row.forEach((val, c) => {
+ if (val) {
+ drawSingleBox(tCtx, (currentPiece.col + c) * T_SIZE, (currentPiece.row + r) * T_SIZE, T_SIZE, currentPiece.color);
+ }
+ });
+ });
+ }
+ }
+
+ function drawSingleBox(ctx, x, y, size, color) {
+ ctx.fillStyle = color;
+ ctx.fillRect(x, y, size, size);
+ ctx.strokeStyle = '#141520';
+ ctx.lineWidth = 1;
+ ctx.strokeRect(x, y, size, size);
+ ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+ ctx.fillRect(x + size * 0.35, y, size * 0.3, size);
+ }
+
+ function drawBoxGrid(ctx, shape, startX, startY, size, color) {
+ shape.forEach((row, r) => {
+ row.forEach((val, c) => {
+ if (val) drawSingleBox(ctx, startX + c * size, startY + r * size, size, color);
+ });
+ });
+ }
+
+ function moveTetris(dir) {
+ if (currentPiece && canMove(currentPiece.row, currentPiece.col + dir, currentPiece.shape)) {
+ currentPiece.col += dir;
+ drawTetris();
+ }
+ }
+
+ function rotateTetris() {
+ if (!currentPiece) return;
+ const rotated = currentPiece.shape[0].map((_, i) => currentPiece.shape.map(row => row[i]).reverse());
+ if (canMove(currentPiece.row, currentPiece.col, rotated)) {
+ currentPiece.shape = rotated;
+ drawTetris();
+ }
+ }
+
+ function dropTetris() {
+ if (!currentPiece) return;
+ while (canMove(currentPiece.row + 1, currentPiece.col, currentPiece.shape)) {
+ currentPiece.row++;
+ }
+ updateTetris();
+ }
+
+ function claimPackingReward() {
+ if (tetrisInterval) clearInterval(tetrisInterval);
+ showNotificationToast(`¡${shippingDiscount}% de descuento en envíos aplicado!`);
+ navigateTo('home');
+ }
+
+
+ // --- GAME 2: MARKET FRENZY (MODIFICADO Y OPTIMIZADO) ---
+ const mCanvas = document.getElementById('market-canvas');
+ const mCtx = mCanvas.getContext('2d');
+ let marketLoop = null;
+ let marketTimerInterval = null;
+ let marketTimeLeft = 60;
+ const TARGET_SCORE = 300; // Objetivo de puntos para conseguir el 100% de descuento
+
+ let playerFish = { x: 155, y: 160, radius: 10, score: 0, isAlive: true };
+ let enemyFishes = [];
+ let foodPellets = [];
+
+ function startMarketGame() {
+ const lastPlay = localStorage.getItem('market_frenzy_last_play');
+ const now = Date.now();
+ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+ navigateTo('game-market');
+ playerFish = { x: 155, y: 160, radius: 10, score: 0, isAlive: true };
+ marketTimeLeft = 60;
+ document.getElementById('market-timer').innerText = `${marketTimeLeft}s`;
+ document.getElementById('market-alert').classList.add('hidden');
+ updateTargetProgressBar(0);
+
+ spawnInitialGameElements();
+
+ mCanvas.onmousemove = (e) => {
+ if (!playerFish.isAlive) return;
+ const rect = mCanvas.getBoundingClientRect();
+ playerFish.x = e.clientX - rect.left;
+ playerFish.y = e.clientY - rect.top;
+ };
+
+ mCanvas.ontouchmove = (e) => {
+ if (!playerFish.isAlive) return;
+ const rect = mCanvas.getBoundingClientRect();
+ playerFish.x = e.touches[0].clientX - rect.left;
+ playerFish.y = e.touches[0].clientY - rect.top;
+ };
+
+ if (marketLoop) cancelAnimationFrame(marketLoop);
+ if (marketTimerInterval) clearInterval(marketTimerInterval);
+
+ marketTimerInterval = setInterval(() => {
+ marketTimeLeft--;
+ document.getElementById('market-timer').innerText = `${marketTimeLeft}s`;
+
+ if (marketTimeLeft === 45 || marketTimeLeft === 30 || marketTimeLeft === 15) {
+ triggerBigFishSpawn();
+ }
+
+ if (marketTimeLeft <= 0) {
+ endMarketGame(false);
+ }
+ }, 1000);
+
+ updateMarketGame();
+ }
+
+ function spawnInitialGameElements() {
+ enemyFishes = [];
+ foodPellets = [];
+
+ // 1. Peces más pequeños (Comida viva) - Menta pastel
+ for (let i = 0; i < 5; i++) {
+ let size = 4 + Math.floor(Math.random() * 4); // Radio: 4 a 7 (tú empiezas en 10)
+ enemyFishes.push({
+ x: Math.random() * mCanvas.width,
+ y: Math.random() * mCanvas.height,
+ radius: size,
+ dx: (Math.random() - 0.5) * 1.5,
+ dy: (Math.random() - 0.5) * 1.5,
+ color: '#6EE7B7'
+ });
+ }
+
+ // 2. Peces Enemigos Grandes (Más del doble de tu tamaño inicial) - Coral/Rosa pastel
+ for (let i = 0; i < 3; i++) {
+ let bigSize = 22 + Math.floor(Math.random() * 10); // Radio: 22 a 32 (Más del doble de 10)
+ enemyFishes.push({
+ x: Math.random() * mCanvas.width,
+ y: Math.random() * mCanvas.height,
+ radius: bigSize,
+ dx: (Math.random() - 0.5) * 2,
+ dy: (Math.random() - 0.5) * 2,
+ color: '#FCA5A5'
+ });
+ }
+
+ // 3. Pellets de Comida
+ for (let i = 0; i < 12; i++) {
+ foodPellets.push({
+ x: Math.random() * (mCanvas.width - 20) + 10,
+ y: Math.random() * (mCanvas.height - 20) + 10,
+ radius: 3
+ });
+ }
+ }
+
+ function triggerBigFishSpawn() {
+ const alertBox = document.getElementById('market-alert');
+ alertBox.classList.remove('hidden');
+ setTimeout(() => alertBox.classList.add('hidden'), 2500);
+
+ // Depredadores gigantes masivos
+ for (let i = 0; i < 2; i++) {
+ let hugeSize = 25 + Math.floor(Math.random() * 12); // Radio: 25 a 37
+ enemyFishes.push({
+ x: Math.random() < 0.5 ? 0 : mCanvas.width,
+ y: Math.random() * mCanvas.height,
+ radius: hugeSize,
+ dx: (Math.random() - 0.5) * 2.5,
+ dy: (Math.random() - 0.5) * 2.5,
+ color: '#FCA5A5'
+ });
+ }
+ }
+
+ function updateMarketGame() {
+ mCtx.fillStyle = '#141520';
+ mCtx.fillRect(0, 0, mCanvas.width, mCanvas.height);
+
+ // Dibujar Pellets de Comida
+ foodPellets.forEach((pellet, idx) => {
+ mCtx.beginPath();
+ mCtx.arc(pellet.x, pellet.y, pellet.radius, 0, Math.PI * 2);
+ mCtx.fillStyle = '#FDE68A';
+ mCtx.fill();
+
+ if (playerFish.isAlive) {
+ let distFood = Math.hypot(playerFish.x - pellet.x, playerFish.y - pellet.y);
+ if (distFood < playerFish.radius + pellet.radius) {
+ playerFish.score += 2;
+ // Crecimiento desacelerado (Lento)
+ playerFish.radius = Math.min(playerFish.radius + 0.08, 42);
+ foodPellets[idx] = {
+ x: Math.random() * (mCanvas.width - 20) + 10,
+ y: Math.random() * (mCanvas.height - 20) + 10,
+ radius: 3
+ };
+ updateTargetProgressBar(playerFish.score);
+ }
+ }
+ });
+
+ // Dibujar Pez del Jugador
+ if (playerFish.isAlive) {
+ drawFish(mCtx, playerFish.x, playerFish.y, playerFish.radius, '#7DD3FC', true);
+ }
+
+ // Enemigos
+ enemyFishes.forEach((f, idx) => {
+ f.x += f.dx;
+ f.y += f.dy;
+ if (f.x < 0 || f.x > mCanvas.width) f.dx *= -1;
+ if (f.y < 0 || f.y > mCanvas.height) f.dy *= -1;
+
+ f.color = f.radius < playerFish.radius ? '#6EE7B7' : '#FCA5A5';
+ drawFish(mCtx, f.x, f.y, f.radius, f.color, false);
+
+ if (playerFish.isAlive) {
+ let dist = Math.hypot(playerFish.x - f.x, playerFish.y - f.y);
+ if (dist < playerFish.radius + f.radius * 0.75) {
+ if (playerFish.radius > f.radius) {
+ playerFish.score += Math.floor(f.radius);
+ // Crecimiento controlado al comer un pez enemigo
+ playerFish.radius = Math.min(playerFish.radius + 0.3, 42);
+ 
+ let newSize = 4 + Math.floor(Math.random() * 5);
+ enemyFishes[idx] = {
+ x: Math.random() * mCanvas.width,
+ y: Math.random() * mCanvas.height,
+ radius: newSize,
+ dx: (Math.random() - 0.5) * 1.5,
+ dy: (Math.random() - 0.5) * 1.5,
+ color: '#6EE7B7'
+ };
+ updateTargetProgressBar(playerFish.score);
+ } else {
+ playerFish.isAlive = false;
+ endMarketGame(true);
+ }
+ }
+ }
+ });
+
+ document.getElementById('market-score').innerText = playerFish.score;
+
+ // Comprobación de objetivo máximo
+ if (playerFish.score >= TARGET_SCORE && playerFish.isAlive) {
+ endMarketGame(false, true); // Victoria instantánea por objetivo alcanzado
+ return;
+ }
+
+ if (playerFish.isAlive) {
+ marketLoop = requestAnimationFrame(updateMarketGame);
+ }
+ }
+
+ function updateTargetProgressBar(score) {
+ const percent = Math.min(Math.floor((score / TARGET_SCORE) * 100), 100);
+ document.getElementById('market-target-percent').innerText = `${percent}%`;
+ document.getElementById('market-progress-bar').style.width = `${percent}%`;
+
+ // Descuento máximo de M.O.Q.: hasta 50%
+ moqBonus = Math.min(Math.floor((score / TARGET_SCORE) * 50), 50);
+ document.getElementById('market-moq-bonus').innerText = `-${moqBonus}%`;
+ }
+
+ function drawFish(ctx, x, y, radius, color, isPlayer) {
+ ctx.save();
+ ctx.translate(x, y);
+
+ // Cuerpo
+ ctx.beginPath();
+ ctx.ellipse(0, 0, radius * 1.2, radius * 0.7, 0, 0, Math.PI * 2);
+ ctx.fillStyle = color;
+ ctx.fill();
+
+ // Cola
+ ctx.beginPath();
+ ctx.moveTo(-radius * 1.1, 0);
+ ctx.lineTo(-radius * 1.7, -radius * 0.6);
+ ctx.lineTo(-radius * 1.7, radius * 0.6);
+ ctx.closePath();
+ ctx.fillStyle = color;
+ ctx.fill();
+
+ // Ojo
+ ctx.beginPath();
+ ctx.arc(radius * 0.5, -radius * 0.2, Math.max(1.5, radius * 0.2), 0, Math.PI * 2);
+ ctx.fillStyle = '#FFFFFF';
+ ctx.fill();
+
+ ctx.restore();
+
+ // Textos en pantalla
+ ctx.fillStyle = '#FFFFFF';
+ ctx.font = 'bold 9px sans-serif';
+ ctx.textAlign = 'center';
+
+ if (isPlayer) {
+ ctx.fillText(`Tú (${playerFish.score}pt)`, x, y - radius - 4);
+ } else {
+ ctx.fillText(`${Math.floor(radius * 2)}`, x, y - radius - 3);
+ }
+ }
+
+ function endMarketGame(eatenByEnemy = false, reachedGoal = false) {
+ if (marketLoop) cancelAnimationFrame(marketLoop);
+ if (marketTimerInterval) clearInterval(marketTimerInterval);
+ localStorage.setItem('market_frenzy_last_play', Date.now().toString());
+
+ if (reachedGoal) {
+ showNotificationToast(`¡FELICIDADES! Lograste el 100% del objetivo (-50% M.O.Q.)`);
+ } else if (eatenByEnemy) {
+ showNotificationToast(`¡Te devoró un pez más grande! Puntaje final: ${playerFish.score}`);
+ } else {
+ showNotificationToast(`¡Tiempo agotado! Puntaje final: ${playerFish.score}`);
+ }
+ }
+
+ function claimMarketReward() {
+ endMarketGame(false);
+ showNotificationToast(`Beneficio de -${moqBonus}% M.O.Q. acreditado.`);
+ navigateTo('home');
+ }
+ </script>
+</body>
+</html>
